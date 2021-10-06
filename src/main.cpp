@@ -1,11 +1,20 @@
 #include <Arduino.h>
+#include "PinType.h"
 
 void init();
 void transmit(uint8_t);
 void transmitLine(const char *);
+void transmitNewline();
 uint8_t receive();
 void act(char);
 void displayMenu();
+void displayDigitalInputPins();
+void displayDigitalInputPin(int);
+void displayInputPin(int, int, PinType);
+void displayAnalogInputPins();
+void displayAnalogInputPin(int);
+
+const char PIN_TYPE_MAP[] = { 'A', 'D' };
 
 void setup()
 {
@@ -26,8 +35,6 @@ void init()
   UCSR0C = 0b00000110;
   // 9600 BPS
   UBRR0 = 103;
-
-  // Enable the Receiver
   UCSR0B = (1 << TXEN0) | (1 << RXEN0);
 }
 
@@ -46,12 +53,16 @@ void transmitLine(const char *line)
     transmit(line[i]);
   }
 
+  transmitNewline();
+}
+
+void transmitNewline()
+{
   transmit('\n');
 }
 
 uint8_t receive()
 {
-  // Polling
   while (!(UCSR0A & (1 << RXC0)))
     ;
 
@@ -59,23 +70,24 @@ uint8_t receive()
 }
 
 // Application Functions //
-// The application is in a waiting state/sleep until it receives S for start.
 void act(char data)
 {
   switch (data)
   {
   case 'S':
   case 's':
-    // Display menu
     displayMenu();
+    transmitNewline();
     break;
   case 'D':
   case 'd':
-    // Show the levels of the digital input pins 8 through 13
+    displayDigitalInputPins();
+    transmitNewline();
     break;
   case 'A':
   case 'a':
-    // Show the levels of the analog input pins 0 through 5
+    displayAnalogInputPins();
+    transmitNewline();
     break;
   case 'C':
   case 'c':
@@ -95,7 +107,6 @@ const char *menuOptions[MENU_SIZE] = {
   "- C: Clear Screen"
 };
 
-// Send the menu string character by character
 void displayMenu()
 {
   transmitLine(MENU_TITLE);
@@ -103,5 +114,53 @@ void displayMenu()
   {
     transmitLine(menuOptions[i]);
   }
-  transmit('\n');
+}
+
+const int DIGITAL_MIN_PIN = 8;
+const int DIGITAL_MAX_PIN = 13;
+
+void displayDigitalInputPins()
+{
+  for (int i = DIGITAL_MIN_PIN; i <= DIGITAL_MAX_PIN; i++)
+  {
+    displayDigitalInputPin(i);
+    transmitNewline();
+  }
+}
+
+char buffer[8];
+
+void displayDigitalInputPin(int pin)
+{
+  displayInputPin(pin, digitalRead(pin), DIGITAL);
+}
+
+void displayInputPin(int pin, int value, PinType type)
+{
+  if (pin < 10) 
+  {
+    sprintf(buffer, "%cI0%i: %i", PIN_TYPE_MAP[type], pin, digitalRead(pin));
+  } 
+  else 
+  {
+    sprintf(buffer, "%cI%i: %i", PIN_TYPE_MAP[type], pin, digitalRead(pin));
+  }
+  transmitLine(buffer);
+}
+
+const int ANALOG_MIN_PIN = 0;
+const int ANALOG_MAX_PIN = 5;
+
+void displayAnalogInputPins()
+{
+  for (int i = ANALOG_MIN_PIN; i <= ANALOG_MAX_PIN; i++)
+  {
+    displayAnalogInputPin(i);
+    transmitNewline();
+  }
+}
+
+void displayAnalogInputPin(int pin)
+{
+  displayInputPin(pin, digitalRead(pin), ANALOG);
 }
