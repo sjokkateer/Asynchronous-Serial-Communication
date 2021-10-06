@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "PinType.h"
+#include "ApplicationState.h"
 
 void init();
 void transmit(uint8_t);
@@ -16,6 +17,7 @@ void displayAnalogInputPin(int);
 void clearDisplay();
 
 const char PIN_TYPE_MAP[] = { 'A', 'D' };
+ApplicationState appState = AWAITING;
 
 void setup()
 {
@@ -27,6 +29,20 @@ char data;
 void loop()
 {
   data = receive();
+
+  if (appState != STARTED)
+  {
+    if (data == 'S' || data == 's')
+    {
+      displayMenu();
+      transmitNewline();
+
+      appState = STARTED;
+    }
+    
+    return;
+  }
+
   act(data);
 }
 
@@ -75,12 +91,6 @@ void act(char data)
 {
   switch (data)
   {
-  case 'S':
-  case 's':
-    displayMenu();
-    transmitNewline();
-    // Set application into a started state
-    break;
   case 'D':
   case 'd':
     displayDigitalInputPins();
@@ -94,7 +104,7 @@ void act(char data)
   case 'C':
   case 'c':
     clearDisplay();
-    // Set application into await state
+    appState = AWAITING;
     break;
   default:
     break;
