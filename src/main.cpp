@@ -28,6 +28,12 @@ char data;
 
 void loop()
 {
+  if (appState == AWAITING) 
+  {
+    transmitLine("Press 'S' or 's' to start the application.");
+    transmitNewline();
+  }
+
   data = receive();
 
   if (appState != STARTED)
@@ -36,7 +42,7 @@ void loop()
     {
       displayMenu();
       transmitNewline();
-
+      
       appState = STARTED;
     }
     
