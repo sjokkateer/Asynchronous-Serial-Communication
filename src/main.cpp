@@ -17,7 +17,7 @@ void init()
   UCSR0C = 0b00000110;
   // Set baud rate through UBRR0L and UBRR0H (USART Baud Rate 0 Register Low/High)
   // 12 bits in size. (4 MSB in H) 8 LSB in L.
-  UBRR0 = 103;
+  UBRR0 = 103; // See datasheet for common used values
   // OR
   // UBRR0H = 0b00000000;
   // UBRR0L = 0b01100111;
@@ -53,14 +53,14 @@ void setup()
   init();
 }
 
-const char data = 'F';
-bool sent = false;
+const char *data = "Hello, World!\n";
 
 void loop()
 {
-  if (!sent)
+  for (unsigned int i = 0; i < strlen(data); i++)
   {
-    transmit(data);
-    sent = true;
+    transmit(data[i]);
   }
+
+  _delay_ms(2000);
 }
