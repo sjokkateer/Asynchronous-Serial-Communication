@@ -13,6 +13,7 @@ void displayDigitalInputPin(int);
 void displayInputPin(int, int, PinType);
 void displayAnalogInputPins();
 void displayAnalogInputPin(int);
+void clearDisplay();
 
 const char PIN_TYPE_MAP[] = { 'A', 'D' };
 
@@ -78,6 +79,7 @@ void act(char data)
   case 's':
     displayMenu();
     transmitNewline();
+    // Set application into a started state
     break;
   case 'D':
   case 'd':
@@ -91,7 +93,8 @@ void act(char data)
     break;
   case 'C':
   case 'c':
-    // Clear and stop terminal server
+    clearDisplay();
+    // Set application into await state
     break;
   default:
     break;
@@ -163,4 +166,12 @@ void displayAnalogInputPins()
 void displayAnalogInputPin(int pin)
 {
   displayInputPin(pin, digitalRead(pin), ANALOG);
+}
+
+void clearDisplay()
+{
+  for (uint8_t i = 0; i < 54; i++)
+  {
+    transmitNewline();
+  }
 }
