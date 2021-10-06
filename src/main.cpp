@@ -117,7 +117,7 @@ void act(char data)
   }
 }
 
-const char *MENU_TITLE = "View current input levels:";
+const char *MENU_HEADER = "View current input levels:";
 
 int const MENU_SIZE = 3;
 const char *menuOptions[MENU_SIZE] = {
@@ -128,7 +128,7 @@ const char *menuOptions[MENU_SIZE] = {
 
 void displayMenu()
 {
-  transmitLine(MENU_TITLE);
+  transmitLine(MENU_HEADER);
   for (uint8_t i = 0; i < MENU_SIZE; i++)
   {
     transmitLine(menuOptions[i]);
