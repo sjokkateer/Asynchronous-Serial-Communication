@@ -1,193 +1,97 @@
 #include <Arduino.h>
-#include "PinType.h"
-#include "ApplicationState.h"
 
-void init();
-void transmit(uint8_t);
-void transmitLine(const char *);
-void transmitNewline();
-uint8_t receive();
-void act(char);
-void displayMenu();
-void displayDigitalInputPins();
-void displayDigitalInputPin(int);
-void displayInputPin(int, int, PinType);
-void displayAnalogInputPins();
-void displayAnalogInputPin(int);
-void clearDisplay();
+#define RECEIVER PD2
+#define RECEIVE_PIN_VAL (PIND & (1 << RECEIVER)) >> RECEIVER
 
-const char PIN_TYPE_MAP[] = { 'A', 'D' };
-ApplicationState appState = AWAITING;
+volatile bool interrupted = false;
+uint8_t interval;
+
+// Is the size 1 start bit, 8 bit data frame, no parity bit, 1 stop bit aka 8n1
+const uint8_t TOTAL_PACKET_SIZE = 10;
+bool bitBuffer[TOTAL_PACKET_SIZE];
+uint8_t index;
+uint8_t characterValue;
+
+void convertToBaseTen();
+void printDetails();
 
 void setup()
 {
-  init();
+    Serial.begin(9600);
+    // RECEIVER input pin with internal pullup.
+    DDRD &= ~(1 << RECEIVER);
+    PORTD |= (1 << RECEIVER);
+
+    // Perhaps on pin change interrupt flag and read in mainloop.
+    sei();
+    PCICR |= (1 << PCIE2);
+    PCMSK2 |= (1 << PCINT18);
 }
 
-char data;
+ISR(PCINT2_vect)
+{
+    if (RECEIVE_PIN_VAL == 0)
+    {
+        interrupted = true;
+        interval = 0;
+        index = 0;
+    }
+}
 
 void loop()
 {
-  if (appState == AWAITING) 
-  {
-    transmitLine("Press 'S' or 's' to start the application.");
-    transmitNewline();
-  }
+    if (!interrupted)
+        return;
 
-  data = receive();
+    // To not get interrupted by pin change interrupts while receiving data
+    PCICR &= ~(1 << PCIE2);
 
-  if (appState != STARTED)
-  {
-    if (data == 'S' || data == 's')
+    while (interval < 20)
     {
-      displayMenu();
-      transmitNewline();
-      
-      appState = STARTED;
+        ++interval;
+        _delay_ms(0.05208);
+
+        if (interval % 2 == 1)
+        {
+            bitBuffer[index] = RECEIVE_PIN_VAL;
+            index++;
+        }
     }
-    
-    return;
-  }
 
-  act(data);
+    interrupted = false;
+    convertToBaseTen();
+    printDetails();
+
+    // Re-enable to get an interrupt for data receival.
+    PCICR |= (1 << PCIE2);
 }
 
-// USART Functions //
-void init()
+void convertToBaseTen()
 {
-  UCSR0C = 0b00000110;
-  // 9600 BPS
-  UBRR0 = 103;
-  UCSR0B = (1 << TXEN0) | (1 << RXEN0);
+    uint8_t base = 1;
+    characterValue = 0;
+
+    for (uint8_t i = 1; i < TOTAL_PACKET_SIZE - 1; i++)
+    {
+        characterValue += base * bitBuffer[i];
+        base *= 2;
+    }
 }
 
-void transmit(uint8_t data)
+void printDetails()
 {
-  while (!(UCSR0A & (1 << UDRE0)))
-    ;
+    Serial.print("BYTE: ");
+    for (uint8_t i = TOTAL_PACKET_SIZE - 2; i > 0; i--)
+    {
+        Serial.print(bitBuffer[i]);
+    }
+    Serial.println();
 
-  UDR0 = data;
-}
+    Serial.print("INTEGER: ");
+    Serial.println(characterValue);
 
-void transmitLine(const char *line)
-{
-  for (unsigned int i = 0; i < strlen(line); i++)
-  {
-    transmit(line[i]);
-  }
+    Serial.print("CHARACTER: ");
+    Serial.println((char)characterValue);
 
-  transmitNewline();
-}
-
-void transmitNewline()
-{
-  transmit('\n');
-}
-
-uint8_t receive()
-{
-  while (!(UCSR0A & (1 << RXC0)))
-    ;
-
-  return UDR0;
-}
-
-// Application Functions //
-void act(char data)
-{
-  switch (data)
-  {
-  case 'D':
-  case 'd':
-    displayDigitalInputPins();
-    transmitNewline();
-    break;
-  case 'A':
-  case 'a':
-    displayAnalogInputPins();
-    transmitNewline();
-    break;
-  case 'C':
-  case 'c':
-    clearDisplay();
-    appState = AWAITING;
-    break;
-  default:
-    break;
-  }
-}
-
-const char *MENU_HEADER = "View current input levels:";
-
-int const MENU_SIZE = 3;
-const char *menuOptions[MENU_SIZE] = {
-  "- D: Digital Inputs DI08 - DI13",
-  "- A: Analog Inputs A0 - A5",
-  "- C: Clear Screen"
-};
-
-void displayMenu()
-{
-  transmitLine(MENU_HEADER);
-  for (uint8_t i = 0; i < MENU_SIZE; i++)
-  {
-    transmitLine(menuOptions[i]);
-  }
-}
-
-const int DIGITAL_MIN_PIN = 8;
-const int DIGITAL_MAX_PIN = 13;
-
-void displayDigitalInputPins()
-{
-  for (int i = DIGITAL_MIN_PIN; i <= DIGITAL_MAX_PIN; i++)
-  {
-    displayDigitalInputPin(i);
-    transmitNewline();
-  }
-}
-
-char buffer[8];
-
-void displayDigitalInputPin(int pin)
-{
-  displayInputPin(pin, digitalRead(pin), DIGITAL);
-}
-
-void displayInputPin(int pin, int value, PinType type)
-{
-  if (pin < 10) 
-  {
-    sprintf(buffer, "%cI0%i: %i", PIN_TYPE_MAP[type], pin, digitalRead(pin));
-  } 
-  else 
-  {
-    sprintf(buffer, "%cI%i: %i", PIN_TYPE_MAP[type], pin, digitalRead(pin));
-  }
-  transmitLine(buffer);
-}
-
-const int ANALOG_MIN_PIN = 0;
-const int ANALOG_MAX_PIN = 5;
-
-void displayAnalogInputPins()
-{
-  for (int i = ANALOG_MIN_PIN; i <= ANALOG_MAX_PIN; i++)
-  {
-    displayAnalogInputPin(i);
-    transmitNewline();
-  }
-}
-
-void displayAnalogInputPin(int pin)
-{
-  displayInputPin(pin, digitalRead(pin), ANALOG);
-}
-
-void clearDisplay()
-{
-  for (uint8_t i = 0; i < 54; i++)
-  {
-    transmitNewline();
-  }
+    Serial.println();
 }
