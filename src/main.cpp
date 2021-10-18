@@ -30,6 +30,7 @@ void setup()
 
 ISR(PCINT2_vect)
 {
+    // Activate timer, since start bit
     if (RECEIVE_PIN_VAL == 0)
     {
         interrupted = true;
@@ -49,7 +50,7 @@ void loop()
     while (interval < 20)
     {
         ++interval;
-        _delay_ms(0.05208);
+        _delay_ms(0.05199);
 
         if (interval % 2 == 1)
         {
