@@ -34,17 +34,18 @@ ISR(PCINT2_vect)
     // Turn off pin change interrupt for input pin.
     PCMSK2 &= ~(1 << PCINT18);
 
-    // Timer 1 setup:
-    TCCR1A = 0;
-    // CTC mode for OCR1A and pre-scaler 1
-    TCCR1B = 0 | (1 << WGM12) | (1 << CS10);
+    // CTC Mode for OCR1A
+    TCCR0A = 0 | (1 << WGM01);
+    // pre-scaler 8 to achieve our required delay
+    TCCR0B = 0 | (1 << CS01);
     // Set compare value for interrupts
-    // 0.05199 / (1 / 16000000 * 1000) rounded 832
-    OCR1A = 832;
+    // 0.05199 / (1 / 16000000 * 1000) / 8 rounded 104
+    // minus 1 seemed to be more accurate on logic analyzer.
+    OCR0A = 103;
     // Reset timer1 counter value
-    TCNT1 = 0;
+    TCNT0 = 0;
     // Enable timer compare interrupt
-    TIMSK1 = 0 | (1 << OCIE1A);
+    TIMSK0 = 0 | (1 << OCIE0A);
 
     // Reset interval and index value since new receival
     interval = 0;
@@ -54,7 +55,7 @@ ISR(PCINT2_vect)
     receiveState = RECEIVING;
 }
 
-ISR(TIMER1_COMPA_vect)
+ISR(TIMER0_COMPA_vect)
 {
     ++interval;
 
@@ -74,7 +75,7 @@ void loop()
     if (receiveState == COMPLETED)
     {
         // Turn off timer interrupts
-        TIMSK1 &= ~(1 << OCIE1A);
+        TIMSK0 &= ~(1 << OCIE0A);
         receiveState = IDLE;
         convertToBaseTen();
         printDetails();
