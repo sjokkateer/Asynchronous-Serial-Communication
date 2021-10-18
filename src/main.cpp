@@ -1,9 +1,9 @@
 #include <Arduino.h>
+#include "ReceiveState.h"
 
 #define RECEIVER PD2
 #define RECEIVE_PIN_VAL (PIND & (1 << RECEIVER)) >> RECEIVER
 
-volatile bool interrupted = false;
 uint8_t interval;
 
 // Is the size 1 start bit, 8 bit data frame, no parity bit, 1 stop bit aka 8n1
@@ -11,6 +11,8 @@ const uint8_t TOTAL_PACKET_SIZE = 10;
 bool bitBuffer[TOTAL_PACKET_SIZE];
 uint8_t index;
 uint8_t characterValue;
+
+volatile ReceiveState receiveState = IDLE;
 
 void convertToBaseTen();
 void printDetails();
@@ -22,7 +24,6 @@ void setup()
     DDRD &= ~(1 << RECEIVER);
     PORTD |= (1 << RECEIVER);
 
-    // Perhaps on pin change interrupt flag and read in mainloop.
     sei();
     PCICR |= (1 << PCIE2);
     PCMSK2 |= (1 << PCINT18);
@@ -30,41 +31,56 @@ void setup()
 
 ISR(PCINT2_vect)
 {
-    // Activate timer, since start bit
-    if (RECEIVE_PIN_VAL == 0)
+    // Turn off pin change interrupt for input pin.
+    PCMSK2 &= ~(1 << PCINT18);
+
+    // Timer 1 setup:
+    TCCR1A = 0;
+    // CTC mode for OCR1A and pre-scaler 1
+    TCCR1B = 0 | (1 << WGM12) | (1 << CS10);
+    // Set compare value for interrupts
+    // 0.05199 / (1 / 16000000 * 1000) rounded 832
+    OCR1A = 832;
+    // Reset timer1 counter value
+    TCNT1 = 0;
+    // Enable timer compare interrupt
+    TIMSK1 = 0 | (1 << OCIE1A);
+
+    // Reset interval and index value since new receival
+    interval = 0;
+    index = 0;
+
+    // Update receiver state
+    receiveState = RECEIVING;
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+    ++interval;
+
+    if (interval >= 20)
     {
-        interrupted = true;
-        interval = 0;
-        index = 0;
+        receiveState = COMPLETED;
+    }
+    else if (interval % 2 == 1)
+    {
+        bitBuffer[index] = RECEIVE_PIN_VAL;
+        index++;
     }
 }
 
 void loop()
 {
-    if (!interrupted)
-        return;
-
-    // To not get interrupted by pin change interrupts while receiving data
-    PCICR &= ~(1 << PCIE2);
-
-    while (interval < 20)
+    if (receiveState == COMPLETED)
     {
-        ++interval;
-        _delay_ms(0.05199);
-
-        if (interval % 2 == 1)
-        {
-            bitBuffer[index] = RECEIVE_PIN_VAL;
-            index++;
-        }
+        // Turn off timer interrupts
+        TIMSK1 &= ~(1 << OCIE1A);
+        receiveState = IDLE;
+        convertToBaseTen();
+        printDetails();
+        // Turn on pin change interrupts for receive pin again
+        PCMSK2 |= (1 << PCINT18);
     }
-
-    interrupted = false;
-    convertToBaseTen();
-    printDetails();
-
-    // Re-enable to get an interrupt for data receival.
-    PCICR |= (1 << PCIE2);
 }
 
 void convertToBaseTen()
