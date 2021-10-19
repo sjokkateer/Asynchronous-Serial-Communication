@@ -1,193 +1,114 @@
 #include <Arduino.h>
-#include "PinType.h"
-#include "ApplicationState.h"
+#include "TransmitState.h"
 
+#define SIZE 8
+
+#define LSB 0
+#define MSB SIZE - 1
+
+// Delay is a result of tweaking through logic analyzer
+// to have it get closer to 1/9600.
+#define DELAY_TIME 0.100
+
+#define TRANSMIT_DDR DDRD
+#define TRANSMIT_PIN PD3
+#define TRANSMIT_PORT PORTD
+
+#define TRANSMIT_LOW TRANSMIT_PORT &= ~(1 << TRANSMIT_PIN)
+#define TRANSMIT_HIGH TRANSMIT_PORT |= (1 << TRANSMIT_PIN)
+
+#define TRANSMIT_PIN_VALUE TRANSMIT_PORT >> TRANSMIT_PIN
+
+#define START_CHAR_VAL 65
+#define MAX_CHAR_VAL 122
+
+void reset();
 void init();
-void transmit(uint8_t);
-void transmitLine(const char *);
-void transmitNewline();
-uint8_t receive();
-void act(char);
-void displayMenu();
-void displayDigitalInputPins();
-void displayDigitalInputPin(int);
-void displayInputPin(int, int, PinType);
-void displayAnalogInputPins();
-void displayAnalogInputPin(int);
-void clearDisplay();
 
-const char PIN_TYPE_MAP[] = { 'A', 'D' };
-ApplicationState appState = AWAITING;
+bool bitValue(char, uint8_t);
+
+TransmitState transmitState;
+uint8_t transmitBit;
+char transmitChar;
 
 void setup()
 {
-  init();
+    reset();
+    init();
 }
 
-char data;
+bool once = false;
 
 void loop()
 {
-  if (appState == AWAITING) 
-  {
-    transmitLine("Press 'S' or 's' to start the application.");
-    transmitNewline();
-  }
+    if (once) return;
 
-  data = receive();
-
-  if (appState != STARTED)
-  {
-    if (data == 'S' || data == 's')
+    switch (transmitState)
     {
-      displayMenu();
-      transmitNewline();
-      
-      appState = STARTED;
-    }
-    
-    return;
-  }
+    case IDLE:
+        transmitState = STARTING;
+        break;
+    case STARTING:
+        transmitState = TRANSMITTING;
+        TRANSMIT_LOW;
+        _delay_ms(DELAY_TIME);
+        break;
+    case TRANSMITTING:
+        bitValue(transmitChar, transmitBit) ? TRANSMIT_HIGH : TRANSMIT_LOW;
 
-  act(data);
+        transmitBit++;
+
+        if (transmitBit == SIZE)
+        {
+            transmitState = STOPPING;
+        }
+
+        _delay_ms(DELAY_TIME);
+        break;
+    case STOPPING:
+        TRANSMIT_HIGH;
+        // Delay for stop bit
+        _delay_ms(DELAY_TIME);
+        transmitChar++;
+        reset();
+        break;
+    default:
+        break;
+    }
 }
 
-// USART Functions //
+void reset()
+{
+    transmitState = IDLE;
+    transmitBit = LSB;
+
+    if (transmitChar > MAX_CHAR_VAL)
+    {
+        // Transmit all characters from the range once to terminal client.
+        once = true;
+    }
+}
+
 void init()
 {
-  UCSR0C = 0b00000110;
-  // 9600 BPS
-  UBRR0 = 103;
-  UCSR0B = (1 << TXEN0) | (1 << RXEN0);
+    transmitChar = START_CHAR_VAL;
+    // Define Tx as output pin
+    TRANSMIT_DDR |= (1 << TRANSMIT_PIN);
+    // Pull high to indicate idle
+    TRANSMIT_HIGH;
 }
 
-void transmit(uint8_t data)
+bool bitValue(char data, uint8_t position)
 {
-  while (!(UCSR0A & (1 << UDRE0)))
-    ;
-
-  UDR0 = data;
+    return (data & (1 << position)) >> position;
 }
 
-void transmitLine(const char *line)
+void printCharAsByte(char data)
 {
-  for (unsigned int i = 0; i < strlen(line); i++)
-  {
-    transmit(line[i]);
-  }
+    for (int i = SIZE - 1; i >= 0; i--)
+    {
+        Serial.print((data & (1 << i)) >> i);
+    }
 
-  transmitNewline();
-}
-
-void transmitNewline()
-{
-  transmit('\n');
-}
-
-uint8_t receive()
-{
-  while (!(UCSR0A & (1 << RXC0)))
-    ;
-
-  return UDR0;
-}
-
-// Application Functions //
-void act(char data)
-{
-  switch (data)
-  {
-  case 'D':
-  case 'd':
-    displayDigitalInputPins();
-    transmitNewline();
-    break;
-  case 'A':
-  case 'a':
-    displayAnalogInputPins();
-    transmitNewline();
-    break;
-  case 'C':
-  case 'c':
-    clearDisplay();
-    appState = AWAITING;
-    break;
-  default:
-    break;
-  }
-}
-
-const char *MENU_HEADER = "View current input levels:";
-
-int const MENU_SIZE = 3;
-const char *menuOptions[MENU_SIZE] = {
-  "- D: Digital Inputs DI08 - DI13",
-  "- A: Analog Inputs A0 - A5",
-  "- C: Clear Screen"
-};
-
-void displayMenu()
-{
-  transmitLine(MENU_HEADER);
-  for (uint8_t i = 0; i < MENU_SIZE; i++)
-  {
-    transmitLine(menuOptions[i]);
-  }
-}
-
-const int DIGITAL_MIN_PIN = 8;
-const int DIGITAL_MAX_PIN = 13;
-
-void displayDigitalInputPins()
-{
-  for (int i = DIGITAL_MIN_PIN; i <= DIGITAL_MAX_PIN; i++)
-  {
-    displayDigitalInputPin(i);
-    transmitNewline();
-  }
-}
-
-char buffer[8];
-
-void displayDigitalInputPin(int pin)
-{
-  displayInputPin(pin, digitalRead(pin), DIGITAL);
-}
-
-void displayInputPin(int pin, int value, PinType type)
-{
-  if (pin < 10) 
-  {
-    sprintf(buffer, "%cI0%i: %i", PIN_TYPE_MAP[type], pin, digitalRead(pin));
-  } 
-  else 
-  {
-    sprintf(buffer, "%cI%i: %i", PIN_TYPE_MAP[type], pin, digitalRead(pin));
-  }
-  transmitLine(buffer);
-}
-
-const int ANALOG_MIN_PIN = 0;
-const int ANALOG_MAX_PIN = 5;
-
-void displayAnalogInputPins()
-{
-  for (int i = ANALOG_MIN_PIN; i <= ANALOG_MAX_PIN; i++)
-  {
-    displayAnalogInputPin(i);
-    transmitNewline();
-  }
-}
-
-void displayAnalogInputPin(int pin)
-{
-  displayInputPin(pin, digitalRead(pin), ANALOG);
-}
-
-void clearDisplay()
-{
-  for (uint8_t i = 0; i < 54; i++)
-  {
-    transmitNewline();
-  }
+    Serial.println();
 }
