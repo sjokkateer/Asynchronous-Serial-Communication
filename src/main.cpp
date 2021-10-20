@@ -2,6 +2,7 @@
 #include "ReceiveState.h"
 #include "TransmitState.h"
 #include "OutputPin.h"
+#include "Timer.h"
 
 #define RECEIVER PD2
 #define RECEIVE_PIN_VAL (PIND & (1 << RECEIVER)) >> RECEIVER
@@ -24,6 +25,7 @@ uint8_t finalIndex;
 uint8_t transmitCharIndex;
 
 OutputPin transmitPin = OutputPin('D', 3);
+Timer *timer;
 
 void setup()
 {
