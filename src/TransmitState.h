@@ -5,5 +5,6 @@ enum TransmitState
     IDLE,
     STARTING,
     TRANSMITTING,
-    STOPPING
+    STOPPING,
+    RESETTING
 };
