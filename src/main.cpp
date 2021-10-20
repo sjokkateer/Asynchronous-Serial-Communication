@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include "ReceiveState.h"
+#include "TransmitState.h"
+#include "OutputPin.h"
 
 #define RECEIVER PD2
 #define RECEIVE_PIN_VAL (PIND & (1 << RECEIVER)) >> RECEIVER
@@ -12,7 +14,7 @@ bool bitBuffer[TOTAL_PACKET_SIZE];
 uint8_t index;
 uint8_t characterValue;
 
-volatile ReceiveState receiveState = IDLE;
+volatile ReceiveState receiveState = ReceiveState::IDLE;
 
 void convertToBaseTen();
 void printDetails();
@@ -20,6 +22,8 @@ void printDetails();
 const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
 uint8_t finalIndex;
 uint8_t transmitCharIndex;
+
+OutputPin transmitPin = OutputPin('D', 3);
 
 void setup()
 {
@@ -80,7 +84,7 @@ void loop()
     {
         // Turn off timer interrupts
         TIMSK0 &= ~(1 << OCIE0A);
-        receiveState = IDLE;
+        receiveState = ReceiveState::IDLE;
         convertToBaseTen();
         printDetails();
         // Turn on pin change interrupts for receive pin again
@@ -88,7 +92,7 @@ void loop()
     }
 
     TCNT2 = 0;
-    TRANSMIT_HIGH;
+    transmitPin.high();
 }
 
 void convertToBaseTen()
