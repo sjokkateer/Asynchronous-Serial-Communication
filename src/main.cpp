@@ -17,6 +17,10 @@ volatile ReceiveState receiveState = IDLE;
 void convertToBaseTen();
 void printDetails();
 
+const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
+uint8_t finalIndex;
+uint8_t transmitCharIndex;
+
 void setup()
 {
     Serial.begin(9600);
@@ -84,6 +88,7 @@ void loop()
     }
 
     TCNT2 = 0;
+    TRANSMIT_HIGH;
 }
 
 void convertToBaseTen()
