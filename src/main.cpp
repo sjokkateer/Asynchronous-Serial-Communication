@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "TransmitState.h"
 #include "OutputPin.h"
+#include "Timer.h"
 
 #define SIZE 8
 
@@ -8,10 +9,6 @@
 #define MSB SIZE - 1
 
 void idle();
-void init();
-void initTransmitPin();
-void initTransmitTimer();
-
 bool bitValue(char, uint8_t);
 
 volatile TransmitState transmitState;
@@ -23,14 +20,16 @@ uint8_t finalIndex;
 uint8_t transmitCharIndex;
 
 OutputPin transmitPin = OutputPin('D', 3);
+Timer *timer;
 
 void setup()
 {
     finalIndex = strlen(TEST_LINE) - 1;
     transmitCharIndex = -1;
 
+    timer = new Timer();
+
     idle();
-    init();
     sei();
 }
 
@@ -49,9 +48,10 @@ void loop()
     transmitCharIndex++;
     transmitChar = TEST_LINE[transmitCharIndex];
 
-    // This is equivalent to starting
     transmitState = TRANSMITTING;
-    TIMSK2 |= (1 << OCIE2A);
+    // Start bit
+    timer->reset();
+    timer->enable();
     transmitPin.low();
 }
 
@@ -77,7 +77,7 @@ ISR(TIMER2_COMPA_vect)
     case RESETTING:
         idle();
         // Stop interrupts for this timer.
-        TIMSK2 = 0;
+        timer->disable();
     default:
         break;
     }
@@ -85,30 +85,10 @@ ISR(TIMER2_COMPA_vect)
 
 void idle()
 {
-    // Resets the transmitter and related peripherals into an idle state
     transmitState = IDLE;
     transmitBit = LSB;
-    TCNT2 = 0;
+    timer->reset();
     transmitPin.high();
-}
-
-void init()
-{
-    initTransmitPin();
-    initTransmitTimer();
-}
-
-void initTransmitPin()
-{
-    transmitPin.high();
-}
-
-void initTransmitTimer()
-{
-    TCCR2A = 0 | (1 << WGM21);
-    TCCR2B = 0 | (1 << CS21);
-    OCR2A = 206;
-    TIMSK2 = 0 | (1 << OCIE2A);
 }
 
 bool bitValue(char data, uint8_t position)
