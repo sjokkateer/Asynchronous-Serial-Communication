@@ -3,6 +3,7 @@
 #include "TransmitState.h"
 #include "OutputPin.h"
 #include "Timer.h"
+#include "Transmitter.h"
 
 #define RECEIVER PD2
 #define RECEIVE_PIN_VAL (PIND & (1 << RECEIVER)) >> RECEIVER
@@ -24,7 +25,7 @@ const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
 uint8_t finalIndex;
 uint8_t transmitCharIndex;
 
-OutputPin transmitPin = OutputPin('D', 3);
+Transmitter *transmitter;
 Timer *timer;
 
 void setup()
@@ -92,9 +93,6 @@ void loop()
         // Turn on pin change interrupts for receive pin again
         PCMSK2 |= (1 << PCINT18);
     }
-
-    TCNT2 = 0;
-    transmitPin.high();
 }
 
 void convertToBaseTen()
