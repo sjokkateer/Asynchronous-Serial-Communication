@@ -82,6 +82,8 @@ void loop()
         // Turn on pin change interrupts for receive pin again
         PCMSK2 |= (1 << PCINT18);
     }
+
+    TCNT2 = 0;
 }
 
 void convertToBaseTen()
