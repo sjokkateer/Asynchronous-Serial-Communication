@@ -2,6 +2,7 @@
 #include "TransmitState.h"
 #include "OutputPin.h"
 #include "Timer.h"
+#include "Transmitter.h"
 
 #define SIZE 8
 
@@ -19,14 +20,19 @@ const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
 uint8_t finalIndex;
 uint8_t transmitCharIndex;
 
-OutputPin transmitPin = OutputPin('D', 3);
+Transmitter *transmitter;
 Timer *timer;
 
 void setup()
 {
+    Serial.begin(9600);
+
     finalIndex = strlen(TEST_LINE) - 1;
     transmitCharIndex = -1;
 
+    // If not dynamically constructed, the timer settings
+    // through the constructor did not get set.
+    transmitter = new Transmitter(new OutputPin('D', 3));
     timer = new Timer();
 
     idle();
@@ -35,7 +41,7 @@ void setup()
 
 void loop()
 {
-    if (transmitState != IDLE)
+    if (transmitter->getState() != IDLE)
     {
         return;
     }
@@ -48,31 +54,31 @@ void loop()
     transmitCharIndex++;
     transmitChar = TEST_LINE[transmitCharIndex];
 
-    transmitState = TRANSMITTING;
+    transmitter->setState(TRANSMITTING);
     // Start bit
     timer->reset();
     timer->enable();
-    transmitPin.low();
+    transmitter->low();
 }
 
 ISR(TIMER2_COMPA_vect)
 {
-    switch (transmitState)
+    switch (transmitter->getState())
     {
     case TRANSMITTING:
-        bitValue(transmitChar, transmitBit) ? transmitPin.high() : transmitPin.low();
+        bitValue(transmitChar, transmitBit) ? transmitter->high() : transmitter->low();
 
         transmitBit++;
 
         if (transmitBit == SIZE)
         {
-            transmitState = STOPPING;
+            transmitter->setState(STOPPING);
         }
 
         break;
     case STOPPING:
-        transmitPin.high();
-        transmitState = RESETTING;
+        transmitter->high();
+        transmitter->setState(RESETTING);
         break;
     case RESETTING:
         idle();
@@ -85,10 +91,10 @@ ISR(TIMER2_COMPA_vect)
 
 void idle()
 {
-    transmitState = IDLE;
+    transmitter->setState(IDLE);
     transmitBit = LSB;
     timer->reset();
-    transmitPin.high();
+    transmitter->high();
 }
 
 bool bitValue(char data, uint8_t position)
