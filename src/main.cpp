@@ -1,17 +1,11 @@
 #include <Arduino.h>
 #include "TransmitState.h"
+#include "OutputPin.h"
 
 #define SIZE 8
 
 #define LSB 0
 #define MSB SIZE - 1
-
-#define TRANSMIT_DDR DDRD
-#define TRANSMIT_PIN PD3
-#define TRANSMIT_PORT PORTD
-
-#define TRANSMIT_LOW TRANSMIT_PORT &= ~(1 << TRANSMIT_PIN)
-#define TRANSMIT_HIGH TRANSMIT_PORT |= (1 << TRANSMIT_PIN)
 
 void idle();
 void init();
@@ -27,6 +21,8 @@ volatile char transmitChar;
 const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
 uint8_t finalIndex;
 uint8_t transmitCharIndex;
+
+OutputPin transmitPin = OutputPin('D', 3);
 
 void setup()
 {
@@ -56,7 +52,7 @@ void loop()
     // This is equivalent to starting
     transmitState = TRANSMITTING;
     TIMSK2 |= (1 << OCIE2A);
-    TRANSMIT_LOW;
+    transmitPin.low();
 }
 
 ISR(TIMER2_COMPA_vect)
@@ -64,7 +60,7 @@ ISR(TIMER2_COMPA_vect)
     switch (transmitState)
     {
     case TRANSMITTING:
-        bitValue(transmitChar, transmitBit) ? TRANSMIT_HIGH : TRANSMIT_LOW;
+        bitValue(transmitChar, transmitBit) ? transmitPin.high() : transmitPin.low();
 
         transmitBit++;
 
@@ -75,7 +71,7 @@ ISR(TIMER2_COMPA_vect)
 
         break;
     case STOPPING:
-        TRANSMIT_HIGH;
+        transmitPin.high();
         transmitState = RESETTING;
         break;
     case RESETTING:
@@ -93,7 +89,7 @@ void idle()
     transmitState = IDLE;
     transmitBit = LSB;
     TCNT2 = 0;
-    TRANSMIT_HIGH;
+    transmitPin.high();
 }
 
 void init()
@@ -104,9 +100,7 @@ void init()
 
 void initTransmitPin()
 {
-    // Define transmit pin as output pin
-    TRANSMIT_DDR |= (1 << TRANSMIT_PIN);
-    TRANSMIT_HIGH;
+    transmitPin.high();
 }
 
 void initTransmitTimer()
