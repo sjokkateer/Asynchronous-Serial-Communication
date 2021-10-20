@@ -6,10 +6,6 @@
 #define LSB 0
 #define MSB SIZE - 1
 
-// Delay is a result of tweaking through logic analyzer
-// to have it get closer to 1/9600.
-#define DELAY_TIME 0.100
-
 #define TRANSMIT_DDR DDRD
 #define TRANSMIT_PIN PD3
 #define TRANSMIT_PORT PORTD
@@ -27,22 +23,23 @@ void init();
 
 bool bitValue(char, uint8_t);
 
-TransmitState transmitState;
-uint8_t transmitBit;
-char transmitChar;
+volatile TransmitState transmitState;
+volatile uint8_t transmitBit;
+volatile char transmitChar;
 
 void setup()
 {
+    cli();
     reset();
     init();
 }
 
-bool once = false;
-
 void loop()
 {
-    if (once) return;
+}
 
+ISR(TIMER2_COMPA_vect)
+{
     switch (transmitState)
     {
     case IDLE:
@@ -51,7 +48,6 @@ void loop()
     case STARTING:
         transmitState = TRANSMITTING;
         TRANSMIT_LOW;
-        _delay_ms(DELAY_TIME);
         break;
     case TRANSMITTING:
         bitValue(transmitChar, transmitBit) ? TRANSMIT_HIGH : TRANSMIT_LOW;
@@ -63,12 +59,9 @@ void loop()
             transmitState = STOPPING;
         }
 
-        _delay_ms(DELAY_TIME);
         break;
     case STOPPING:
         TRANSMIT_HIGH;
-        // Delay for stop bit
-        _delay_ms(DELAY_TIME);
         transmitChar++;
         reset();
         break;
@@ -82,20 +75,28 @@ void reset()
     transmitState = IDLE;
     transmitBit = LSB;
 
-    if (transmitChar > MAX_CHAR_VAL)
+    if (transmitChar == MAX_CHAR_VAL)
     {
-        // Transmit all characters from the range once to terminal client.
-        once = true;
+        transmitChar = START_CHAR_VAL;
     }
+
+    TCNT2 = 0;
 }
 
 void init()
 {
-    transmitChar = START_CHAR_VAL;
     // Define Tx as output pin
     TRANSMIT_DDR |= (1 << TRANSMIT_PIN);
     // Pull high to indicate idle
     TRANSMIT_HIGH;
+
+    // Timer related setup
+    TCCR2A = 0 | (1 << WGM21);
+    TCCR2B = 0 | (1 << CS21);
+    OCR2A = 206;
+    TIMSK2 = 0 | (1 << OCIE2A);
+
+    sei();
 }
 
 bool bitValue(char data, uint8_t position)
