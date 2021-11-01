@@ -19,3 +19,14 @@ void Transmitter::setState(TransmitState newState)
 {
     this->state = newState;
 }
+
+void Transmitter::transmit(char data)
+{
+    this->data = data;
+    this->low();
+}
+
+bool Transmitter::isBusy()
+{
+    return this->getState() != IDLE;
+}

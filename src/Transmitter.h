@@ -10,6 +10,8 @@ private:
     // Transmit pin
     OutputPin *pin;
 
+    char data;
+
 public:
     Transmitter(OutputPin *pin) : state(IDLE), pin(pin)
     {
@@ -26,4 +28,7 @@ public:
     void low();
     TransmitState getState();
     void setState(TransmitState);
+    void transmit(char);
+    void transmit(char *);
+    bool isBusy();
 };
