@@ -25,8 +25,6 @@ Timer *timer;
 
 void setup()
 {
-    Serial.begin(9600);
-
     finalIndex = strlen(TEST_LINE) - 1;
     transmitCharIndex = -1;
 
@@ -41,7 +39,7 @@ void setup()
 
 void loop()
 {
-    if (transmitter->getState() != IDLE)
+    if (transmitter->isBusy())
     {
         return;
     }
@@ -82,7 +80,6 @@ ISR(TIMER2_COMPA_vect)
         break;
     case RESETTING:
         idle();
-        // Stop interrupts for this timer.
         timer->disable();
     default:
         break;
