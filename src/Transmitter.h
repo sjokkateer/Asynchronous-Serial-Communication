@@ -31,4 +31,6 @@ public:
     void transmit(char);
     void transmit(char *);
     bool isBusy();
+    void act(char, uint8_t *);
+    uint8_t bitValue(char, uint8_t);
 };

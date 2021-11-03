@@ -13,7 +13,7 @@ void idle();
 bool bitValue(char, uint8_t);
 
 volatile TransmitState transmitState;
-volatile uint8_t transmitBit;
+uint8_t transmitBit;
 volatile char transmitChar;
 
 const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
@@ -63,25 +63,11 @@ ISR(TIMER2_COMPA_vect)
 {
     switch (transmitter->getState())
     {
-    case TRANSMITTING:
-        bitValue(transmitChar, transmitBit) ? transmitter->high() : transmitter->low();
-
-        transmitBit++;
-
-        if (transmitBit == SIZE)
-        {
-            transmitter->setState(STOPPING);
-        }
-
-        break;
-    case STOPPING:
-        transmitter->high();
-        transmitter->setState(RESETTING);
-        break;
     case RESETTING:
         idle();
         timer->disable();
     default:
+        transmitter->act(transmitChar, &transmitBit);
         break;
     }
 }
@@ -92,9 +78,4 @@ void idle()
     transmitBit = LSB;
     timer->reset();
     transmitter->high();
-}
-
-bool bitValue(char data, uint8_t position)
-{
-    return data & (1 << position);
 }
