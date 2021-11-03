@@ -18,12 +18,16 @@ TransmitState Transmitter::getState()
 void Transmitter::setState(TransmitState newState)
 {
     this->state = newState;
-}
 
-void Transmitter::transmit(char data)
-{
-    this->data = data;
-    this->low();
+    switch (newState)
+    {
+    case IDLE:
+        this->transmitBit = LSB;
+        this->pin->high();
+        break;
+    default:
+        break;
+    }
 }
 
 bool Transmitter::isBusy()
@@ -31,16 +35,16 @@ bool Transmitter::isBusy()
     return this->getState() != IDLE;
 }
 
-void Transmitter::act(char transmitChar, uint8_t *transmitBit)
+void Transmitter::act(char transmitChar)
 {
     switch (this->getState())
     {
     case TRANSMITTING:
-        this->bitValue(transmitChar, *transmitBit) ? this->high() : this->low();
+        this->bitValue(transmitChar) ? this->high() : this->low();
 
-        (*transmitBit)++;
+        (this->transmitBit)++;
 
-        if (*transmitBit == 8)
+        if (this->transmitBit == 8)
         {
             this->setState(STOPPING);
         }
@@ -55,7 +59,7 @@ void Transmitter::act(char transmitChar, uint8_t *transmitBit)
     }
 }
 
-uint8_t Transmitter::bitValue(char data, uint8_t position)
+uint8_t Transmitter::bitValue(char data)
 {
-    return data & (1 << position);
+    return data & (1 << this->transmitBit);
 }
