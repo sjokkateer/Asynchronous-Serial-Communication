@@ -6,14 +6,11 @@
 
 #define SIZE 8
 
-#define LSB 0
 #define MSB SIZE - 1
 
 void idle();
 bool bitValue(char, uint8_t);
 
-volatile TransmitState transmitState;
-uint8_t transmitBit;
 volatile char transmitChar;
 
 const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
@@ -32,8 +29,8 @@ void setup()
     // through the constructor did not get set.
     transmitter = new Transmitter(new OutputPin('D', 3));
     timer = new Timer();
+    timer->reset();
 
-    idle();
     sei();
 }
 
@@ -64,18 +61,12 @@ ISR(TIMER2_COMPA_vect)
     switch (transmitter->getState())
     {
     case RESETTING:
-        idle();
         timer->disable();
+        timer->reset();
+
+        transmitter->setState(IDLE);
     default:
-        transmitter->act(transmitChar, &transmitBit);
+        transmitter->act(transmitChar);
         break;
     }
-}
-
-void idle()
-{
-    transmitter->setState(IDLE);
-    transmitBit = LSB;
-    timer->reset();
-    transmitter->high();
 }

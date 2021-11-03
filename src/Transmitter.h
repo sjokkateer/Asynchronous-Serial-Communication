@@ -3,20 +3,21 @@
 #include "TransmitState.h"
 #include "OutputPin.h"
 
+#define LSB 0
+
 class Transmitter
 {
 private:
     TransmitState state;
-    // Transmit pin
     OutputPin *pin;
+    uint8_t transmitBit;
 
     char data;
 
 public:
-    Transmitter(OutputPin *pin) : state(IDLE), pin(pin)
+    Transmitter(OutputPin *pin) : pin(pin), transmitBit(LSB)
     {
-        // Pull high for IDLE.
-        this->pin->high();
+        this->setState(IDLE);
     }
 
     ~Transmitter()
@@ -31,6 +32,6 @@ public:
     void transmit(char);
     void transmit(char *);
     bool isBusy();
-    void act(char, uint8_t *);
-    uint8_t bitValue(char, uint8_t);
+    void act(char);
+    uint8_t bitValue(char);
 };
