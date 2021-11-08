@@ -2,24 +2,55 @@
 #include <stdint.h>
 #include <avr/io.h>
 
-// Simplified class to only expose some methods
-// that allow for bare minimum control to turn
-// on/off timer interrupts and reset the timer's
-// counter.
 class Timer
 {
 public:
+    /**
+     * The constructer will INITIALIZE the timer/counter2
+     * by putting it in clear timer on compare match mode.
+     * 
+     * For the 8-bit timer to realize the opted delay/interval
+     * the prescaler is set to 8 with a corresponding compare
+     * value of 206.
+     * 
+     * The user will have to reset/enable etc. before activating
+     * and using the timer.
+     */
     Timer()
     {
-        TCCR2A = 0 | (1 << WGM21);
-        TCCR2B = 0 | (1 << CS21);
+        // Explicitly set the timer to 010
+        // for clear timer on compare match mode
+        TCCR2B &= ~(1 << WGM22);
+        TCCR2A &= ~(1 << WGM20);
+        TCCR2A |= (1 << WGM21);
+
+        // Set prescaler explicitly to 010
+        // for for prescaler 8
+        TCCR2B |= (1 << CS21);
+        TCCR2B &= ~(1 << CS20);
+        TCCR2B &= ~(1 << CS22);
+
+        // Set output compare value that is
+        // the result of measurements with
+        // logic analyzer and theoretical.
+        // (value is used for output compare interrupts)
         OCR2A = 206;
     }
 
-    // Resets the counter.
+    /**
+     * Sets the current TC2 counter value to 0.
+     */
     void reset();
-    // Enables compare match on A
+
+    /**
+     * Resets the output compare flag and
+     * enables compare match A interrupts.
+     */
     void enable();
-    // Disables compare match on A
+
+    /**
+     * Disables the interrupts for all in
+     * the interrupt mask register.
+     */
     void disable();
 };
