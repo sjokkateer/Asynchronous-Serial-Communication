@@ -49,7 +49,7 @@ void Transmitter::act(char transmitChar)
         this->setState(TRANSMITTING);
         break;
     case TRANSMITTING:
-        this->bitValue(transmitChar) ? this->high() : this->low();
+        this->bitValue(transmitChar) ? this->pin->high() : this->pin->low();
 
         (this->transmitBit)++;
 
@@ -60,7 +60,7 @@ void Transmitter::act(char transmitChar)
 
         break;
     case STOPPING:
-        this->high();
+        this->pin->high();
         this->setState(RESETTING);
         break;
     case RESETTING:
