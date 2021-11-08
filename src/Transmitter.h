@@ -17,7 +17,9 @@ private:
 
     char data;
 
+    void setState(TransmitState);
     void start();
+    uint8_t bitValue();
 
 public:
     Transmitter(OutputPin *pin, Timer *timer) : pin(pin), timer(timer), transmitBit(LSB)
@@ -31,13 +33,8 @@ public:
         delete this->timer;
     }
 
-    void high();
-    void low();
-    TransmitState getState();
-    void setState(TransmitState);
     void transmit(char);
     void transmit(char *);
     bool isBusy();
     void act();
-    uint8_t bitValue();
 };
