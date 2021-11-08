@@ -22,30 +22,15 @@ Timer *timer;
 
 void setup()
 {
-    Serial.begin(9600);
-
     finalIndex = strlen(TEST_LINE) - 1;
     transmitCharIndex = -1;
-
-    // Timer now starts ticking and interrupted
-    // although there would not be a direct reason
-    // for this.
-    // So the interrupt flag might already be set
-    // before we actually care, and immediately get
-    // interrupted
-    timer = new Timer();
 
     // If not dynamically constructed, the timer settings
     // through the constructor did not get set.
     transmitter = new Transmitter(
         new OutputPin('D', 3),
-        timer
+        new Timer()
     );
-
-    _delay_ms(1500);
-
-    Serial.println((TIFR2 & OCF2A) >> OCF2A);
-    Serial.println(TCNT2);
 
     sei();
 }
@@ -74,5 +59,5 @@ ISR(TIMER2_COMPA_vect)
     // OCIE2A, and OCF2A are all '1'.
 
     // Hardware clears the OCF2A flag.
-    transmitter->act(transmitChar);
+    transmitter->act();
 }

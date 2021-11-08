@@ -25,6 +25,7 @@ public:
     ~Transmitter()
     {
         delete this->pin;
+        delete this->timer;
     }
 
     void high();
@@ -34,7 +35,7 @@ public:
     void transmit(char);
     void transmit(char *);
     bool isBusy();
-    void act(char);
-    uint8_t bitValue(char);
+    void act();
+    uint8_t bitValue();
     void start();
 };

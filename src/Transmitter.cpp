@@ -29,7 +29,7 @@ void Transmitter::setState(TransmitState newState)
         this->start();
         break;
     case TRANSMITTING:
-        this->act(this->data);
+        this->act();
         break;
     default:
         break;
@@ -41,7 +41,7 @@ bool Transmitter::isBusy()
     return this->getState() != IDLE;
 }
 
-void Transmitter::act(char transmitChar)
+void Transmitter::act()
 {
     switch (this->getState())
     {
@@ -49,7 +49,7 @@ void Transmitter::act(char transmitChar)
         this->setState(TRANSMITTING);
         break;
     case TRANSMITTING:
-        this->bitValue(transmitChar) ? this->pin->high() : this->pin->low();
+        this->bitValue() ? this->pin->high() : this->pin->low();
 
         (this->transmitBit)++;
 
@@ -81,9 +81,9 @@ void Transmitter::transmit(char transmitChar)
     this->setState(STARTING);
 }
 
-uint8_t Transmitter::bitValue(char data)
+uint8_t Transmitter::bitValue()
 {
-    return data & (1 << this->transmitBit);
+    return this->data & (1 << this->transmitBit);
 }
 
 void Transmitter::start()
