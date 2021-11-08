@@ -82,5 +82,8 @@ uint8_t Transmitter::bitValue(char data)
 
 void Transmitter::start()
 {
+    this->timer->reset();
+    this->timer->enable();
+    // Send start bit
     this->pin->low();
 }

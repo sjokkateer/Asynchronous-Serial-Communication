@@ -27,10 +27,6 @@ void setup()
     finalIndex = strlen(TEST_LINE) - 1;
     transmitCharIndex = -1;
 
-    // If not dynamically constructed, the timer settings
-    // through the constructor did not get set.
-    transmitter = new Transmitter(new OutputPin('D', 3));
-
     // Timer now starts ticking and interrupted
     // although there would not be a direct reason
     // for this.
@@ -38,7 +34,13 @@ void setup()
     // before we actually care, and immediately get
     // interrupted
     timer = new Timer();
-    timer->reset();
+
+    // If not dynamically constructed, the timer settings
+    // through the constructor did not get set.
+    transmitter = new Transmitter(
+        new OutputPin('D', 3),
+        timer
+    );
 
     _delay_ms(1500);
 
@@ -62,13 +64,6 @@ void loop()
 
     transmitCharIndex++;
     transmitChar = TEST_LINE[transmitCharIndex];
-
-    /**
-     * This would be starting state entry point
-     * according to my state machine schema.
-     */
-    timer->reset();
-    timer->enable();
 
     transmitter->transmit(transmitChar);
 }
