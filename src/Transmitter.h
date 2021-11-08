@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "TransmitState.h"
 #include "OutputPin.h"
+#include "Timer.h"
 
 #define LSB 0
 
@@ -10,12 +11,13 @@ class Transmitter
 private:
     TransmitState state;
     OutputPin *pin;
+    Timer *timer;
     uint8_t transmitBit;
 
     char data;
 
 public:
-    Transmitter(OutputPin *pin) : pin(pin), transmitBit(LSB)
+    Transmitter(OutputPin *pin, Timer *timer) : pin(pin), timer(timer), transmitBit(LSB)
     {
         this->setState(IDLE);
     }

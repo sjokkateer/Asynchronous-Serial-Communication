@@ -35,6 +35,9 @@ public:
         // logic analyzer and theoretical.
         // (value is used for output compare interrupts)
         OCR2A = 206;
+
+        // Reset the timer just in case.
+        this->reset();
     }
 
     /**
