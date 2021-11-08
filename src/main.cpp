@@ -35,11 +35,6 @@ void setup()
     DDRD &= ~(1 << RECEIVER);
     PORTD |= (1 << RECEIVER);
 
-    _delay_ms(1500);
-
-    Serial.println((TIFR2 & OCF2A) >> OCF2A);
-    Serial.println(TCNT2);
-
     sei();
     PCICR |= (1 << PCIE2);
     PCMSK2 |= (1 << PCINT18);
