@@ -53,7 +53,7 @@ void Transmitter::act()
 
         (this->transmitBit)++;
 
-        if (this->transmitBit == 8)
+        if (this->transmitBit == SIZE)
         {
             this->setState(STOPPING);
         }

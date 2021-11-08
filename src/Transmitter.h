@@ -4,6 +4,7 @@
 #include "OutputPin.h"
 #include "Timer.h"
 
+#define SIZE 8
 #define LSB 0
 
 class Transmitter
@@ -15,6 +16,8 @@ private:
     uint8_t transmitBit;
 
     char data;
+
+    void start();
 
 public:
     Transmitter(OutputPin *pin, Timer *timer) : pin(pin), timer(timer), transmitBit(LSB)
@@ -37,5 +40,4 @@ public:
     bool isBusy();
     void act();
     uint8_t bitValue();
-    void start();
 };

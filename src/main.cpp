@@ -4,13 +4,6 @@
 #include "Timer.h"
 #include "Transmitter.h"
 
-#define SIZE 8
-
-#define MSB SIZE - 1
-
-void idle();
-bool bitValue(char, uint8_t);
-
 volatile char transmitChar;
 
 const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
@@ -25,8 +18,6 @@ void setup()
     finalIndex = strlen(TEST_LINE) - 1;
     transmitCharIndex = -1;
 
-    // If not dynamically constructed, the timer settings
-    // through the constructor did not get set.
     transmitter = new Transmitter(
         new OutputPin('D', 3),
         new Timer()
