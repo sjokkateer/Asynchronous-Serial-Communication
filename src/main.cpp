@@ -63,11 +63,14 @@ void loop()
     transmitCharIndex++;
     transmitChar = TEST_LINE[transmitCharIndex];
 
-    transmitter->setState(TRANSMITTING);
-    // Start bit
+    /**
+     * This would be starting state entry point
+     * according to my state machine schema.
+     */
     timer->reset();
     timer->enable();
-    transmitter->low();
+
+    transmitter->transmit(transmitChar);
 }
 
 ISR(TIMER2_COMPA_vect)

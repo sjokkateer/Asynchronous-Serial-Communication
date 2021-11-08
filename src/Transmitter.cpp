@@ -25,6 +25,12 @@ void Transmitter::setState(TransmitState newState)
         this->transmitBit = LSB;
         this->pin->high();
         break;
+    case STARTING:
+        this->start();
+        break;
+    case TRANSMITTING:
+        this->act(this->data);
+        break;
     default:
         break;
     }
@@ -39,6 +45,9 @@ void Transmitter::act(char transmitChar)
 {
     switch (this->getState())
     {
+    case STARTING:
+        this->setState(TRANSMITTING);
+        break;
     case TRANSMITTING:
         this->bitValue(transmitChar) ? this->high() : this->low();
 
@@ -59,7 +68,19 @@ void Transmitter::act(char transmitChar)
     }
 }
 
+void Transmitter::transmit(char transmitChar)
+{
+    this->data = transmitChar;
+
+    this->setState(STARTING);
+}
+
 uint8_t Transmitter::bitValue(char data)
 {
     return data & (1 << this->transmitBit);
+}
+
+void Transmitter::start()
+{
+    this->pin->low();
 }
