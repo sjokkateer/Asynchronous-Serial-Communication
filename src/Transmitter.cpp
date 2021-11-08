@@ -1,13 +1,17 @@
 #include "Transmitter.h"
+#include "string.h"
 
 void Transmitter::setState(TransmitState newState)
 {
     this->state = newState;
 
+    // On entry
     switch (newState)
     {
     case IDLE:
         this->transmitBit = LSB;
+        // Perhaps only pull pin high for idle
+        // when the entire string is sent
         this->pin->high();
         break;
     case STARTING:
@@ -56,6 +60,21 @@ void Transmitter::act()
         break;
     default:
         break;
+    }
+}
+
+void Transmitter::transmit(const char *string)
+{
+    int length = strlen(string);
+
+    for (int i = 0; i < length; i++)
+    {
+        // Probably this was getting optimized by the
+        // compiler when the body of the loop was empty.
+        while (this->isBusy())
+            ;
+
+        this->transmit(string[i]);
     }
 }
 

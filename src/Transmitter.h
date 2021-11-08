@@ -10,7 +10,7 @@
 class Transmitter
 {
 private:
-    TransmitState state;
+    volatile TransmitState state;
     OutputPin *pin;
     Timer *timer;
     uint8_t transmitBit;
@@ -20,6 +20,8 @@ private:
     void setState(TransmitState);
     void start();
     uint8_t bitValue();
+    void transmit(char);
+    bool isBusy();
 
 public:
     Transmitter(OutputPin *pin, Timer *timer) : pin(pin), timer(timer), transmitBit(LSB)
@@ -33,8 +35,6 @@ public:
         delete this->timer;
     }
 
-    void transmit(char);
-    void transmit(char *);
-    bool isBusy();
+    void transmit(const char *);
     void act();
 };

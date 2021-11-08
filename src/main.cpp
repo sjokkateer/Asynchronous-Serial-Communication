@@ -4,20 +4,13 @@
 #include "Timer.h"
 #include "Transmitter.h"
 
-volatile char transmitChar;
-
 const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
-uint8_t finalIndex;
-uint8_t transmitCharIndex;
 
 Transmitter *transmitter;
 Timer *timer;
 
 void setup()
 {
-    finalIndex = strlen(TEST_LINE) - 1;
-    transmitCharIndex = -1;
-
     transmitter = new Transmitter(
         new OutputPin('D', 3),
         new Timer()
@@ -28,20 +21,7 @@ void setup()
 
 void loop()
 {
-    if (transmitter->isBusy())
-    {
-        return;
-    }
-
-    if (transmitCharIndex == finalIndex)
-    {
-        transmitCharIndex = -1;
-    }
-
-    transmitCharIndex++;
-    transmitChar = TEST_LINE[transmitCharIndex];
-
-    transmitter->transmit(transmitChar);
+    transmitter->transmit(TEST_LINE);
 }
 
 ISR(TIMER2_COMPA_vect)
