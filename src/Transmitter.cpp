@@ -63,6 +63,12 @@ void Transmitter::act(char transmitChar)
         this->high();
         this->setState(RESETTING);
         break;
+    case RESETTING:
+        this->timer->disable();
+        this->timer->reset();
+
+        this->setState(IDLE);
+        break;
     default:
         break;
     }

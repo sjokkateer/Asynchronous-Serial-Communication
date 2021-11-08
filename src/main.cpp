@@ -74,16 +74,5 @@ ISR(TIMER2_COMPA_vect)
     // OCIE2A, and OCF2A are all '1'.
 
     // Hardware clears the OCF2A flag.
-    switch (transmitter->getState())
-    {
-    case RESETTING:
-        timer->disable();
-        timer->reset();
-
-        transmitter->setState(IDLE);
-        break;
-    default:
-        transmitter->act(transmitChar);
-        break;
-    }
+    transmitter->act(transmitChar);
 }
