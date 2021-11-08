@@ -34,4 +34,5 @@ public:
     bool isBusy();
     void act(char);
     uint8_t bitValue(char);
+    void start();
 };
