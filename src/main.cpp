@@ -22,8 +22,6 @@ void convertToBaseTen();
 void printDetails();
 
 const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
-uint8_t finalIndex;
-uint8_t transmitCharIndex;
 
 Transmitter *transmitter;
 Timer *timer;
