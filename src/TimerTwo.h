@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <avr/io.h>
 
-class Timer
+class TimerTwo
 {
 public:
     /**
@@ -16,7 +16,7 @@ public:
      * The user will have to reset/enable etc. before activating
      * and using the timer.
      */
-    Timer()
+    TimerTwo()
     {
         // Explicitly set the timer to 010
         // for clear timer on compare match mode

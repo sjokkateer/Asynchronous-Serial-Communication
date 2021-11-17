@@ -1,13 +1,13 @@
-#include "Timer.h"
+#include "TimerTwo.h"
 
-void Timer::reset()
+void TimerTwo::reset()
 {
     // Reset the current counter
     // of timer 2
     TCNT2 = 0;
 }
 
-void Timer::enable()
+void TimerTwo::enable()
 {
     // Timer interrupt flag register
     // requires us to write '1' to the
@@ -17,7 +17,7 @@ void Timer::enable()
     TIMSK2 = 0 | (1 << OCIE2A);
 }
 
-void Timer::disable()
+void TimerTwo::disable()
 {
     // Disable all interrupts
     // in this case it will at least
