@@ -26,7 +26,7 @@ private:
 public:
     Transmitter(OutputPin *pin, Timer *timer) : pin(pin), timer(timer), transmitBit(LSB)
     {
-        this->setState(IDLE);
+        this->setState(TransmitState::IDLE);
     }
 
     ~Transmitter()

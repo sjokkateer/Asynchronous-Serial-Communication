@@ -2,7 +2,7 @@
 
 enum ReceiveState
 {
-    IDLE,
+    R_IDLE,
     RECEIVING,
     COMPLETED
 };

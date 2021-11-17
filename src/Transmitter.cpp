@@ -8,7 +8,7 @@ void Transmitter::setState(TransmitState newState)
     // On entry
     switch (newState)
     {
-    case IDLE:
+    case TransmitState::IDLE:
         this->transmitBit = LSB;
         // Perhaps only pull pin high for idle
         // when the entire string is sent

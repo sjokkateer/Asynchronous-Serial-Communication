@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "ReceiveState.h"
-#include "TransmitState.h"
 #include "OutputPin.h"
 #include "Timer.h"
 #include "Transmitter.h"
@@ -16,15 +15,10 @@ bool bitBuffer[TOTAL_PACKET_SIZE];
 uint8_t index;
 uint8_t characterValue;
 
-volatile ReceiveState receiveState = ReceiveState::IDLE;
+volatile ReceiveState receiveState = R_IDLE;
 
 void convertToBaseTen();
 void printDetails();
-
-const char *TEST_LINE = "Press 'S' or 's' to start the application.\n";
-
-Transmitter *transmitter;
-Timer *timer;
 
 void setup()
 {
@@ -85,7 +79,7 @@ void loop()
     {
         // Turn off timer interrupts
         TIMSK0 &= ~(1 << OCIE0A);
-        receiveState = ReceiveState::IDLE;
+        receiveState = R_IDLE;
         convertToBaseTen();
         printDetails();
         // Turn on pin change interrupts for receive pin again
