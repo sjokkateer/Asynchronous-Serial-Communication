@@ -1,8 +1,9 @@
 #include <Arduino.h>
 #include "ReceiveState.h"
 #include "OutputPin.h"
-#include "Timer.h"
+#include "TimerTwo.h"
 #include "Transmitter.h"
+#include "TimerZero.h"
 
 #define RECEIVER PD2
 #define RECEIVE_PIN_VAL (PIND & (1 << RECEIVER)) >> RECEIVER
@@ -20,6 +21,9 @@ volatile ReceiveState receiveState = R_IDLE;
 void convertToBaseTen();
 void printDetails();
 
+TimerZero *timer;
+volatile bool first;
+
 void setup()
 {
     Serial.begin(9600);
@@ -30,25 +34,13 @@ void setup()
     sei();
     PCICR |= (1 << PCIE2);
     PCMSK2 |= (1 << PCINT18);
+
+    timer = new TimerZero();
 }
 
 ISR(PCINT2_vect)
 {
-    // Turn off pin change interrupt for input pin.
     PCMSK2 &= ~(1 << PCINT18);
-
-    // CTC Mode for OCR1A
-    TCCR0A = 0 | (1 << WGM01);
-    // pre-scaler 8 to achieve our required delay
-    TCCR0B = 0 | (1 << CS01);
-    // Set compare value for interrupts
-    // 0.05199 / (1 / 16000000 * 1000) / 8 rounded 104
-    // minus 1 seemed to be more accurate on logic analyzer.
-    OCR0A = 103;
-    // Reset timer1 counter value
-    TCNT0 = 0;
-    // Enable timer compare interrupt
-    TIMSK0 = 0 | (1 << OCIE0A);
 
     // Reset interval and index value since new receival
     interval = 0;
@@ -56,17 +48,30 @@ ISR(PCINT2_vect)
 
     // Update receiver state
     receiveState = RECEIVING;
+
+    first = true;
+
+    timer->setCompareValue(103);
+    timer->reset();
+    timer->enable();
 }
 
 ISR(TIMER0_COMPA_vect)
 {
+    if (first)
+    {
+        timer->setCompareValue(206);
+
+        first = false;
+    }
+
     ++interval;
 
-    if (interval >= 20)
+    if (interval >= 10)
     {
         receiveState = COMPLETED;
     }
-    else if (interval % 2 == 1)
+    else
     {
         bitBuffer[index] = RECEIVE_PIN_VAL;
         index++;
@@ -78,10 +83,12 @@ void loop()
     if (receiveState == COMPLETED)
     {
         // Turn off timer interrupts
-        TIMSK0 &= ~(1 << OCIE0A);
+        timer->disable();
+
         receiveState = R_IDLE;
         convertToBaseTen();
         printDetails();
+
         // Turn on pin change interrupts for receive pin again
         PCMSK2 |= (1 << PCINT18);
     }

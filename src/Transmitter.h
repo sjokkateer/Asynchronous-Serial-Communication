@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "TransmitState.h"
 #include "OutputPin.h"
-#include "Timer.h"
+#include "TimerTwo.h"
 
 #define SIZE 8
 #define LSB 0
@@ -12,7 +12,7 @@ class Transmitter
 private:
     volatile TransmitState state;
     OutputPin *pin;
-    Timer *timer;
+    TimerTwo *timer;
     uint8_t transmitBit;
 
     char data;
@@ -24,7 +24,7 @@ private:
     bool isBusy();
 
 public:
-    Transmitter(OutputPin *pin, Timer *timer) : pin(pin), timer(timer), transmitBit(LSB)
+    Transmitter(OutputPin *pin, TimerTwo *timer) : pin(pin), timer(timer), transmitBit(LSB)
     {
         this->setState(TransmitState::IDLE);
     }
