@@ -4,9 +4,7 @@
 #include "TimerTwo.h"
 #include "Transmitter.h"
 #include "TimerZero.h"
-
-#define RECEIVER PD2
-#define RECEIVE_PIN_VAL (PIND & (1 << RECEIVER)) >> RECEIVER
+#include "InputPin.h"
 
 uint8_t interval;
 
@@ -22,20 +20,20 @@ void convertToBaseTen();
 void printDetails();
 
 TimerZero *timer;
+InputPin *pin;
+
 volatile bool first;
 
 void setup()
 {
     Serial.begin(9600);
-    // RECEIVER input pin with internal pullup.
-    DDRD &= ~(1 << RECEIVER);
-    PORTD |= (1 << RECEIVER);
 
     sei();
     PCICR |= (1 << PCIE2);
     PCMSK2 |= (1 << PCINT18);
 
     timer = new TimerZero();
+    pin = new InputPin('D', 2);
 }
 
 ISR(PCINT2_vect)
@@ -73,7 +71,7 @@ ISR(TIMER0_COMPA_vect)
     }
     else
     {
-        bitBuffer[index] = RECEIVE_PIN_VAL;
+        bitBuffer[index] = pin->read();
         index++;
     }
 }
