@@ -20,8 +20,6 @@ private:
     void setState(TransmitState);
     void start();
     uint8_t bitValue();
-    void transmit(char);
-    bool isBusy();
 
 public:
     Transmitter(OutputPin *pin, TimerTwo *timer) : pin(pin), timer(timer), transmitBit(LSB)
@@ -35,6 +33,8 @@ public:
         delete this->timer;
     }
 
+    bool isBusy();
+    void transmit(char);
     void transmit(const char *);
     void act();
 };

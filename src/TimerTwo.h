@@ -22,13 +22,13 @@ public:
         // for clear timer on compare match mode
         TCCR2B &= ~(1 << WGM22);
         TCCR2A &= ~(1 << WGM20);
-        TCCR2A |= (1 << WGM21);
+        TCCR2A |=  (1 << WGM21);
 
         // Set prescaler explicitly to 010
         // for for prescaler 8
-        TCCR2B |= (1 << CS21);
-        TCCR2B &= ~(1 << CS20);
         TCCR2B &= ~(1 << CS22);
+        TCCR2B |=  (1 << CS21);
+        TCCR2B &= ~(1 << CS20);
 
         // Set output compare value that is
         // the result of measurements with

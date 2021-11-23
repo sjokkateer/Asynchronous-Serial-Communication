@@ -22,12 +22,12 @@ public:
         // for clear timer on compare match mode
         TCCR0B &= ~(1 << WGM02);
         TCCR0A &= ~(1 << WGM00);
-        TCCR0A |= (1 << WGM01);
+        TCCR0A |=  (1 << WGM01);
 
         // Set prescaler explicitly to 010
         // for for prescaler 8 (clock select bits)
         TCCR0B &= ~(1 << CS02);
-        TCCR0B |= (1 << CS01);
+        TCCR0B |=  (1 << CS01);
         TCCR0B &= ~(1 << CS00);
 
         // Reset the timer just in case.

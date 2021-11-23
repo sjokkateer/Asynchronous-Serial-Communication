@@ -12,27 +12,42 @@ uint8_t characterValue;
 void convertToBaseTen();
 void printDetails();
 
-TimerZero *timer;
-InputPin *pin;
 Receiver *receiver;
+Transmitter *transmitter;
+
+// Presumably, if the program is transmitting data
+// and a pin change interrupt occurs for receiving 
+// a character, everything breaks.
+
+// 
 
 void setup()
 {
     Serial.begin(9600);
 
     sei();
-    PCICR |= (1 << PCIE2);
-    PCMSK2 |= (1 << PCINT18);
+    PCICR |= (1 << PCIE0);
+    PCMSK0 |= (1 << PCINT2);
 
-    timer = new TimerZero();
-    pin = new InputPin('D', 2);
-    receiver = new Receiver(pin, timer, 10);
+    receiver = new Receiver(
+        new InputPin('B', 2),
+        new TimerZero(),
+        10
+    );
+
+    transmitter = new Transmitter(
+        new OutputPin('D', 3),
+        new TimerTwo()
+    );
 }
 
-ISR(PCINT2_vect)
+bool receiveInterrupt = false;
+
+ISR(PCINT0_vect)
 {
-    PCMSK2 &= ~(1 << PCINT18);
-    receiver->act();
+    PCMSK0 &= ~(1 << PCINT2);
+
+    receiveInterrupt = true;
 }
 
 ISR(TIMER0_COMPA_vect)
@@ -40,18 +55,36 @@ ISR(TIMER0_COMPA_vect)
     receiver->act();
 }
 
+ISR(TIMER2_COMPA_vect)
+{
+    transmitter->act();
+}
+
+const char *string = "Application started!\n";
+
 void loop()
 {
+    if (receiveInterrupt)
+    {
+        receiveInterrupt = false;
+        receiver->act();
+    }
+
     if (receiver->getState() == COMPLETED)
     {
         receiver->act();
 
         convertToBaseTen();
-        printDetails();
+        Serial.println((char) characterValue);
+
+        // while (transmitter->isBusy())
+        // {
+        // }
 
         // Turn on pin change interrupts for receive pin again
-        PCMSK2 |= (1 << PCINT18);
+        PCMSK0 |= (1 << PCINT2);
     }
+    transmitter->transmit("TEST STRING");
 }
 
 void convertToBaseTen()
