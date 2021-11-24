@@ -68,3 +68,17 @@ uint8_t Receiver::getPacketSize()
 {
     return this->packetSize;
 }
+
+char Receiver::getCharacter()
+{
+    uint8_t base = 1;
+    uint8_t characterValue = 0;
+
+    for (uint8_t i = 1; i < this->getPacketSize() - 1; i++)
+    {
+        characterValue += base * this->bitBuffer[i];
+        base *= 2;
+    }
+
+    return (char) characterValue;
+}

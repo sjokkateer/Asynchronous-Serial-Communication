@@ -12,7 +12,7 @@ void Transmitter::setState(TransmitState newState)
         this->transmitBit = LSB;
         // Perhaps only pull pin high for idle
         // when the entire string is sent
-        this->pin->high();
+        PORTD |= (1 << PD3);
         break;
     case STARTING:
         this->start();
@@ -38,7 +38,7 @@ void Transmitter::act()
         this->setState(TRANSMITTING);
         break;
     case TRANSMITTING:
-        this->bitValue() ? this->pin->high() : this->pin->low();
+        this->bitValue() ? PORTD |= (1 << PD3) : PORTD &= ~(1 << PD3);
 
         (this->transmitBit)++;
 
@@ -49,7 +49,7 @@ void Transmitter::act()
 
         break;
     case STOPPING:
-        this->pin->high();
+        PORTD |= (1 << PD3);
         this->setState(RESETTING);
         break;
     case RESETTING:
@@ -95,5 +95,5 @@ void Transmitter::start()
     this->timer->reset();
     this->timer->enable();
     // Send start bit
-    this->pin->low();
+    PORTD &= ~(1 << PD3);
 }

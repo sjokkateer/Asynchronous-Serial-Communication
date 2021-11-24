@@ -7,7 +7,8 @@
 #include "InputPin.h"
 #include "Receiver.h"
 
-uint8_t characterValue;
+char receivedChar;
+bool receiveInterrupt = false;
 
 void convertToBaseTen();
 void printDetails();
@@ -15,16 +16,8 @@ void printDetails();
 Receiver *receiver;
 Transmitter *transmitter;
 
-// Presumably, if the program is transmitting data
-// and a pin change interrupt occurs for receiving 
-// a character, everything breaks.
-
-// 
-
 void setup()
 {
-    Serial.begin(9600);
-
     sei();
     PCICR |= (1 << PCIE0);
     PCMSK0 |= (1 << PCINT2);
@@ -40,8 +33,6 @@ void setup()
         new TimerTwo()
     );
 }
-
-bool receiveInterrupt = false;
 
 ISR(PCINT0_vect)
 {
@@ -73,50 +64,12 @@ void loop()
     if (receiver->getState() == COMPLETED)
     {
         receiver->act();
+        receivedChar = receiver->getCharacter();
 
-        convertToBaseTen();
-        Serial.println((char) characterValue);
+        // Echo the character to serial terminal client.
+        transmitter->transmit(receivedChar);
 
-        // while (transmitter->isBusy())
-        // {
-        // }
-
-        // Turn on pin change interrupts for receive pin again
+        // Turn on pin change interrupts for receive pin again to unblock process.
         PCMSK0 |= (1 << PCINT2);
     }
-    transmitter->transmit("TEST STRING");
-}
-
-void convertToBaseTen()
-{
-    bool *buffer = receiver->getBuffer();
-
-    uint8_t base = 1;
-    characterValue = 0;
-
-    for (uint8_t i = 1; i < receiver->getPacketSize() - 1; i++)
-    {
-        characterValue += base * buffer[i];
-        base *= 2;
-    }
-}
-
-void printDetails()
-{
-    bool *buffer = receiver->getBuffer();
-
-    Serial.print("BYTE: ");
-    for (uint8_t i = receiver->getPacketSize() - 2; i > 0; i--)
-    {
-        Serial.print(buffer[i]);
-    }
-    Serial.println();
-
-    Serial.print("INTEGER: ");
-    Serial.println(characterValue);
-
-    Serial.print("CHARACTER: ");
-    Serial.println((char)characterValue);
-
-    Serial.println();
 }

@@ -36,4 +36,5 @@ public:
     void act();
     bool *getBuffer();
     uint8_t getPacketSize();
+    char getCharacter();
 };
