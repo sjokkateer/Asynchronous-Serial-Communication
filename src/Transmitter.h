@@ -36,5 +36,6 @@ public:
     bool isBusy();
     void transmit(char);
     void transmit(const char *);
+    void transmitNewLine();
     void act();
 };

@@ -69,11 +69,6 @@ void Transmitter::transmit(const char *string)
 
     for (int i = 0; i < length; i++)
     {
-        // Probably this was getting optimized by the
-        // compiler when the body of the loop was empty.
-        while (this->isBusy())
-            ;
-
         this->transmit(string[i]);
     }
 }
@@ -81,8 +76,16 @@ void Transmitter::transmit(const char *string)
 void Transmitter::transmit(char transmitChar)
 {
     this->data = transmitChar;
-
     this->setState(STARTING);
+
+    // Block until done
+    while (this->isBusy())
+        ;
+}
+
+void Transmitter::transmitNewLine()
+{
+    this->transmit('\n');
 }
 
 uint8_t Transmitter::bitValue()
